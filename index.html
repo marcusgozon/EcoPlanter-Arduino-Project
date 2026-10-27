@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#10261c" />
+  <meta name="description" content="EcoPlanter smart robotics dashboard. Monitor planting, soil moisture, watering and seed dispensing." />
+  <title>EcoPlanter — Smart Agriculture Dashboard</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4c-8 0-15 3-15 11a5 5 0 0 0 5 5c8 0 11-7 10-16Z"/><path d="M3 21c3-5 6-8 12-11"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3V10Z"/><path d="M9 20v-7h6v7"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="12" rx="5"/><path d="M7 12v5M4.5 14.5h5M16 13h.01M19 16h.01"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18M5 17V9m7 8V4m7 13v-6"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle c x="12" cy="12" r="9"/><path d="M12 11v6M12 7.4v.3"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2C9 7 5 11 5 15a7 7 0 1 0 14 0c0-4-4-8-7-13Z"/></symbol>
+    <symbol id="i-seed" viewBox="0 0 24 24"><path d="M12 21V10M12 15c-5 0-8-3-8-8 6 0 8 3 8 8Zm0-4c0-5 3-8 8-8 0 6-3 8-8 8Z"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="3"/><path d="M22 10v4M6 10v4m4-4v4m4-4v4"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="15" rx="3"/><circle cx="12" cy="12.5" r="4"/><path d="M7 5l1-2h8l1 2"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0m-11 4a6 6 0 0 1 8 0M12 20h.01"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 15a9 9 0 0 1-12-12 9 9 0 1 0 12 12Z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 8V3l-4 3a9 9 0 1 0 5 8"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m12 4 7 7m-7-7-7 7m7-7v16"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m12 20 7-7m-7 7-7-7m7 7V4"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m4 12 7-7m-7 7 7 7m-7-7h16"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m20 12-7-7m7 7-7 7m7-7H4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 9 4v6c0 5-4 8-9 10-5-2-9-5-9-10V6l9-4Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 9h18c0-1-3-2-3-9ZM10 21h4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><path d="M8 3v6m8-6v6M5 9h14v3a7 7 0 0 1-14 0V9Zm7 10v3"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#home" data-route="home" aria-label="EcoPlanter home">
+        <span class="brand-mark"><svg class="icon"><use href="#i-leaf"/></svg></span>
+        <span><strong>eco<span>planter</span></strong><small>SMART AGRICULTURE</small></span>
+      </a>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav aria-label="Main navigation" class="main-nav">
+        <button data-route="home" class="nav-link"><svg class="icon"><use href="#i-home"/></svg><span>Home</span></button>
+        <button data-route="dashboard" class="nav-link selected"><svg class="icon"><use href="#i-grid"/></svg><span>Dashboard</span></button>
+        <button data-route="controls" class="nav-link"><svg class="icon"><use href="#i-game"/></svg><span>Robot Controls</span></button>
+        <button data-route="records" class="nav-link"><svg class="icon"><use href="#i-chart"/></svg><span>Planting Records</span></button>
+        <button data-route="settings" class="nav-link"><svg class="icon"><use href="#i-sliders"/></svg><span>Settings</span></button>
+      </nav>
+      <div class="sidebar-label secondary-label">PROJECT</div>
+      <nav class="main-nav" aria-label="Project navigation"><button data-route="about" class="nav-link"><svg class="icon"><use href="#i-info"/></svg><span>About EcoPlanter</span></button></nav>
+      <div class="sidebar-bottom">
+        <div class="connection-card"><span class="connection-beacon"></span><div><strong id="sidebar-connection">Demo environment</strong><span id="sidebar-connection-detail">No physical robot connected</span></div></div>
+        <div class="side-footer"><span>EcoPlanter prototype</span><span>v1.0</span></div>
+      </div>
+    </aside>
+
+    <div class="mobile-backdrop" id="mobileBackdrop" hidden></div>
+    <div class="main-region">
+      <header class="topbar">
+        <div class="breadcrumb"><button class="mobile-menu icon-btn" id="menuButton" aria-label="Open menu"><svg class="icon"><use href="#i-menu"/></svg></button><span>Workspace</span><svg class="icon chevron-icon"><use href="#i-chevron"/></svg><strong id="breadcrumbName">Dashboard</strong></div>
+        <div class="top-actions"><span class="top-time" id="currentTime">--</span><button class="icon-btn" id="themeButton" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-moon"/></svg></button><div class="profile-avatar">EP</div></div>
+      </header>
+      <main id="mainContent">
+        <section class="page" id="page-home" data-page="home">
+          <div class="hero-banner">
+            <div class="hero-copy"><span class="eyebrow light-eyebrow"><span class="ping-dot"></span> A SMARTER WAY TO GROW</span><h1>Precision planting.<br/><em>Made simple.</em></h1><p>Meet EcoPlanter, a student-built agricultural robotics concept combining seed placement, soil sensing, and targeted watering in one intelligent platform.</p><div class="hero-actions"><button class="btn btn-lime" data-route="dashboard">Explore Dashboard <svg class="icon"><use href="#i-arrow"/></svg></button><button class="btn btn-glass" data-route="about">How It Works</button></div></div>
+            <div class="hero-photo" role="img" aria-label="EcoPlanter wheeled robot prototype in a garden"></div>
+          </div>
+          <div class="section-heading"><div><span class="eyebrow">ROBOT CAPABILITIES</span><h2>Small footprint. Big possibilities.</h2></div><p>Meet the features behind the EcoPlanter concept.</p></div>
+          <div class="feature-grid">
+            <article class="feature-card"><div class="feature-image"><img src="assets/seed-drop.webp" alt="Prototype robot dispensing a seed over garden soil"/></div><div class="feature-body"><span class="feature-icon mint"><svg class="icon"><use href="#i-seed"/></svg></span><h3>Precision seed dropping</h3><p>A two-joint arm positions the dispenser above a calibrated planting spot and releases seeds.</p></div></article>
+            <article class="feature-card"><div class="feature-image"><img src="assets/soil-probe.webp" alt="Soil moisture probe inserted into soil by the robot"/></div><div class="feature-body"><span class="feature-icon amber"><svg class="icon"><use href="#i-drop"/></svg></span><h3>Soil moisture sensing</h3><p>A guided, movable probe measures soil moisture before the watering decision.</p></div></article>
+            <article class="feature-card"><div class="feature-image"><img src="assets/watering.webp" alt="EcoPlanter concept with watering arm spraying soil"/></div><div class="feature-body"><span class="feature-icon blue"><svg class="icon"><use href="#i-drop"/></svg></span><h3>Targeted watering</h3><p>A separate arm aims the nozzle at the tested spot, watering only when necessary.</p></div></article>
+          </div>
+          <div class="disclaimer-note"><svg class="icon"><use href="#i-info"/></svg> This showcase depicts a concept prototype. Dashboard readings are simulated until your hardware is connected.</div>
+        </section>
+
+        <section class="page active" id="page-dashboard" data-page="dashboard">
+          <div class="page-head"><div><span class="eyebrow">YOUR FARM, AT A GLANCE</span><h1>Good <span id="greeting">afternoon</span> <span class="wave">✳</span></h1><p>Here is what's happening with your EcoPlanter today.</p></div><div class="head-cta"><span class="tag demo-tag" id="modeTag">● DEMO MODE</span><button class="btn btn-dark" id="headStartButton"><svg class="icon"><use href="#i-play"/></svg> Start Planting</button></div></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-top"><span class="stat-symbol mint"><svg class="icon"><use href="#i-drop"/></svg></span><span class="micro-tag" id="moistureState">DRY SOIL</span></div><div class="stat-label">Soil moisture</div><div class="stat-number"><span id="moistureNum">34</span><small>%</small></div><div class="stat-foot"><span>Current sensor reading</span><span id="moistureFoot">Below threshold</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-symbol yellow"><svg class="icon"><use href="#i-seed"/></svg></span><span class="micro-tag green-text">SESSION COUNT</span></div><div class="stat-label">Seeds dispensed</div><div class="stat-number" id="seedCount">24</div><div class="stat-foot"><span>Counted release commands</span><span>↗ Active</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-symbol sky"><svg class="icon"><use href="#i-drop"/></svg></span><span class="micro-tag">PUMP STATUS</span></div><div class="stat-label">Watering system</div><div class="stat-number stat-text" id="pumpState">Standby</div><div class="stat-foot"><span id="waterFoot">Awaiting dry-soil check</span><span id="pumpPill" class="dot-status"><i></i> Off</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-symbol lavender"><svg class="icon"><use href="#i-battery"/></svg></span><span class="micro-tag">SIMULATED</span></div><div class="stat-label">Battery level</div><div class="stat-number"><span id="batteryNum">82</span><small>%</small></div><div class="progress-track"><span id="batteryBar" style="width:82%"></span></div></article>
+          </div>
+          <div class="dashboard-primary">
+            <article class="panel camera-panel"><div class="panel-header"><div><h2>Camera monitoring</h2><p>Planting area overview</p></div><span class="tag camera-tag"><span class="circle-red"></span> DEMO PREVIEW</span></div><div class="camera-display"><img src="assets/ecoplanter-hero.webp" alt="Concept illustration of the EcoPlanter robot next to a garden planting spot"/><div class="camera-gradient"></div><div class="camera-corners"><i></i><i></i><i></i><i></i></div><div class="camera-overlay-top"><span><span class="camera-lens-dot"></span> ESP32-CAM • NOT LIVE</span><span id="cameraClock">--:--:--</span></div><div class="camera-bottom-caption"><svg class="icon"><use href="#i-camera"/></svg><span>Reference scene · Garden bed 01</span></div></div><div class="camera-footer"><span><span class="status-dot good"></span> Demo visual available</span><button class="text-btn" data-route="controls">Go to controls <svg class="icon"><use href="#i-arrow"/></svg></button></div></article>
+            <article class="panel quick-panel"><div class="panel-header"><div><h2>Quick actions</h2><p>Run your planting simulation</p></div><span class="action-dots">···</span></div><div class="run-status"><span class="run-icon"><svg class="icon"><use href="#i-seed"/></svg></span><div><strong id="robotCurrentStatus">Ready for planting</strong><p id="robotCurrentDetail">The robot is idle and waiting for a command.</p></div></div><div class="quick-progress"><div class="quick-progress-title"><span>Planting cycle</span><strong id="cycleProgressLabel">0 / 5 stages</strong></div><div class="segmented-progress" id="cycleSegments"><span></span><span></span><span></span><span></span><span></span></div></div><div class="quick-buttons"><button class="btn btn-primary wide" id="quickStart"><svg class="icon"><use href="#i-play"/></svg> Start automatic cycle</button><button class="btn btn-ghost wide" id="quickWater"><svg class="icon"><use href="#i-drop"/></svg> Water this spot</button></div><div class="quick-note"><svg class="icon"><use href="#i-info"/></svg><span>In Demo Mode, actions only update simulated readings and logs.</span></div></article>
+          </div>
+          <div class="dashboard-secondary">
+            <article class="panel chart-panel"><div class="panel-header"><div><h2>Soil moisture trend</h2><p>Simulated sensor measurements over time</p></div><span class="legend"><i></i> Moisture %</span></div><div class="chart-layout"><div class="axis-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="chart-plot"><svg id="moistureChart" viewBox="0 0 600 205" preserveAspectRatio="none" aria-label="Soil moisture trend line chart" role="img"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#52aa78" stop-opacity=".30"/><stop offset="100%" stop-color="#52aa78" stop-opacity="0"/></linearGradient></defs><path class="chart-grid" d="M0 1H600M0 51H600M0 102H600M0 153H600M0 204H600"/><path id="chartArea" fill="url(#chartFill)"></path><polyline id="chartLine" fill="none" stroke="#39a66b" stroke-width="3.3" stroke-linejoin="round" stroke-linecap="round" points=""/></svg><div class="chart-times"><span>Earlier</span><span>Recent readings</span><span>Now</span></div></div></div></article>
+            <article class="panel activity-panel"><div class="panel-header"><div><h2>Recent activity</h2><p>Latest actions and system events</p></div><button class="text-btn" data-route="records">View all <svg class="icon"><use href="#i-arrow"/></svg></button></div><div class="activity-list" id="activityList"></div></article>
+          </div>
+        </section>
+
+        <section class="page" id="page-controls" data-page="controls">
+          <div class="page-head"><div><span class="eyebrow">ROBOT OPERATIONS</span><h1>Robot controls</h1><p>Operate your prototype in Demo Mode or connect a compatible ESP32 controller.</p></div><span class="tag demo-tag" id="controlsModeTag">● DEMO MODE</span></div>
+          <div class="control-intro"><svg class="icon"><use href="#i-shield"/></svg><span><strong>Safety first.</strong> When connected to hardware, the motion controls use press-and-hold and send a stop command on release. Always keep a physical emergency stop on the robot.</span></div>
+          <div class="controls-grid">
+            <article class="panel control-panel"><div class="panel-header"><div><h2>Drive system</h2><p>Directional movement</p></div><span class="pill-subtle" id="driveState">Idle</span></div><div class="drive-control"><div class="joystick" id="joystick" role="application" aria-label="Drive joystick"><span class="joy-cross"></span><div class="joy-knob" id="joystickKnob"><svg class="icon"><use href="#i-game"/></svg></div></div><p class="small-help">Drag the stick to drive: push farther for more speed, sideways to steer. Release to stop. The robot must be in Manual Mode for hardware movement.<span class="key-hint"> On desktop, hold the arrow keys (&uarr; &darr; &larr; &rarr;) to move the stick.</span></p></div><div class="action-row"><button class="btn btn-ghost" id="pivotLeft"><svg class="icon"><use href="#i-rotate"/></svg> Pivot left</button><button class="btn btn-ghost" id="pivotRight"><svg class="icon"><use href="#i-rotate"/></svg> Pivot right</button></div><button class="btn btn-ghost wide" id="rotateArms" aria-label="Rotate arms (press and hold)"><svg class="icon"><use href="#i-rotate"/></svg> Rotate arms</button></article>
+            <article class="panel control-panel"><div class="panel-header"><div><h2>Operating mode</h2><p>Choose how EcoPlanter operates</p></div></div><div class="mode-toggle" role="group" aria-label="Operating mode"><button class="mode-choice active" data-opmode="automatic"><svg class="icon"><use href="#i-seed"/></svg><strong>Automatic</strong><small>Programmed cycle</small></button><button class="mode-choice" data-opmode="manual"><svg class="icon"><use href="#i-game"/></svg><strong>Manual</strong><small>Direct controls</small></button></div><div class="operation-status"><span class="soft-indicator"></span><div><strong id="operatingModeText">Automatic mode enabled</strong><p id="operatingModeDetail">Ready to follow the planting sequence.</p></div></div><button class="btn btn-primary wide" id="controlStart"><svg class="icon"><use href="#i-play"/></svg> Start automatic cycle</button><button class="btn btn-ghost wide" id="controlStop"><svg class="icon"><use href="#i-stop"/></svg> Stop current action</button><button class="btn btn-emergency wide" id="emergencyStop"><svg class="icon"><use href="#i-shield"/></svg> EMERGENCY STOP</button></article>
+            <article class="panel arm-panel" id="armPanel">
+              <div class="panel-header"><div><h2>Arm &amp; digger controls</h2><p>Move every servo, save positions, dig and water</p></div><span class="pill-subtle" id="armLink">Demo</span></div>
+              <p class="arm-lock" id="armLock" hidden></p>
+              <div class="arm-toolbar">
+                <button type="button" class="btn btn-ghost" id="armSaveMode" aria-pressed="false">Save mode is off</button>
+                <button type="button" class="btn btn-ghost" id="armHome">Home all</button>
+                <button type="button" class="btn btn-ghost" id="armReset">Reset saved</button>
+              </div>
+              <div class="arm-grid" id="armAxes"></div>
+              <div class="arm-dock">
+                <button type="button" class="btn btn-emergency" id="armStop">Stop all</button>
+                <button type="button" class="btn arm-water" id="armWater" aria-label="Hold to water"><svg class="icon"><use href="#i-drop"/></svg><span id="armWaterLabel">Hold to water</span></button>
+              </div>
+              <span class="component-note">Sliders send the servo pulse width (450–2400 µs). In Save mode, tapping a preset stores the slider position on the robot.</span>
+            </article>
+            <article class="panel actuator-panel"><div class="panel-header"><div><h2>Seed-dropper arm</h2><p>2-joint seed dispenser</p></div><span class="actuator-symbol mint"><svg class="icon"><use href="#i-seed"/></svg></span></div><div class="actuator-meta"><span>Position</span><strong id="seedPosition">Home</strong></div><div class="actuator-actions"><button class="btn btn-ghost" data-action="seed_position">Aim at target</button><button class="btn btn-primary" data-action="seed_drop">Drop seed</button></div><span class="component-note">Dispensing count tracks commands, not verified seed passage.</span></article>
+            <article class="panel actuator-panel"><div class="panel-header"><div><h2>Watering arm</h2><p>Targeted nozzle and 5V pump</p></div><span class="actuator-symbol sky"><svg class="icon"><use href="#i-drop"/></svg></span></div><div class="actuator-meta"><span>Pump</span><strong id="waterPosition">Off</strong></div><div class="actuator-actions"><button class="btn btn-ghost" data-action="water_position">Aim at target</button><button class="btn btn-primary" data-action="water_now">Water spot</button></div><span class="component-note">Automatic cycles skip watering when moisture is sufficient.</span></article>
+            <article class="panel actuator-panel"><div class="panel-header"><div><h2>Soil moisture probe</h2><p>Movable 2-DOF sensor assembly</p></div><span class="actuator-symbol yellow"><svg class="icon"><use href="#i-drop"/></svg></span></div><div class="actuator-meta"><span>Probe</span><strong id="probePosition">Raised</strong></div><div class="actuator-actions"><button class="btn btn-ghost" data-action="probe_raise">Raise probe</button><button class="btn btn-primary" data-action="probe_check">Lower &amp; check</button></div><span class="component-note">A guide rail and depth stop help protect the sensor.</span></article>
+            <article class="panel actuator-panel"><div class="panel-header"><div><h2>Camera & monitoring</h2><p>ESP32-CAM interface</p></div><span class="actuator-symbol lavender"><svg class="icon"><use href="#i-camera"/></svg></span></div><div class="actuator-preview"><img src="assets/ecoplanter-hero.webp" alt="Demo camera preview of EcoPlanter prototype"/><span>DEMO IMAGE — NOT LIVE</span></div><button class="btn btn-ghost wide" data-route="settings">Configure connection <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+          </div>
+        </section>
+
+        <section class="page" id="page-records" data-page="records">
+          <div class="page-head"><div><span class="eyebrow">TRACK YOUR PROGRESS</span><h1>Planting records</h1><p>A history of simulated actions and planting activity.</p></div><button class="btn btn-dark" id="exportCsv"><svg class="icon"><use href="#i-download"/></svg> Export CSV</button></div>
+          <div class="record-cards"><article class="mini-stat"><span>Seeds dispensed</span><strong id="recordSeeds">24</strong><small>Current demo session</small></article><article class="mini-stat"><span>Watering events</span><strong id="recordWater">3</strong><small>Current demo session</small></article><article class="mini-stat"><span>Recorded events</span><strong id="recordEvents">0</strong><small>Recent activity entries</small></article></div>
+          <div class="panel records-panel"><div class="panel-header"><div><h2>Activity log</h2><p>Events generated by the website</p></div><button class="btn btn-ghost small-btn" id="clearRecords">Clear history</button></div><div class="records-scroll"><table class="records-table"><thead><tr><th>TIME</th><th>EVENT</th><th>DETAILS</th><th>SOURCE</th></tr></thead><tbody id="recordsBody"></tbody></table></div></div>
+        </section>
+
+        <section class="page" id="page-settings" data-page="settings">
+          <div class="page-head"><div><span class="eyebrow">PERSONALIZE YOUR ROBOT</span><h1>Settings</h1><p>Adjust how EcoPlanter behaves and prepare a connection to ESP32.</p></div><span class="tag muted-tag">Saved in this browser</span></div>
+          <div class="settings-grid">
+            <article class="panel settings-card"><div class="panel-header"><div><h2>Planting preferences</h2><p>Demo cycle configuration</p></div><span class="actuator-symbol mint"><svg class="icon"><use href="#i-sliders"/></svg></span></div>
+              <label class="slider-field" for="thresholdRange"><span><strong>Dry soil threshold</strong><small>Water only below this level</small></span><output id="thresholdValue">40%</output></label><input id="thresholdRange" type="range" min="15" max="75" step="5" value="40"/>
+              <label class="slider-field" for="wateringRange"><span><strong>Watering duration</strong><small>Seconds the demo pump runs</small></span><output id="wateringValue">3s</output></label><input id="wateringRange" type="range" min="1" max="10" step="1" value="3"/>
+              <div class="settings-input-row"><label for="spacingInput">Planting distance (cm)</label><select id="spacingInput"><option value="10">10 cm</option><option value="15">15 cm</option><option value="20">20 cm</option><option value="25">25 cm</option></select></div>
+              <div class="settings-input-row"><label for="seedsInput">Seeds per spot</label><select id="seedsInput"><option value="1">1 seed</option><option value="2">2 seeds</option><option value="3">3 seeds</option></select></div>
+              <button class="btn btn-primary wide" id="saveSettings">Save preferences</button>
+            </article>
+            <article class="panel settings-card"><div class="panel-header"><div><h2>ESP32 connection</h2><p>Optional hardware integration</p></div><span class="actuator-symbol sky"><svg class="icon"><use href="#i-wifi"/></svg></span></div>
+              <div class="connection-explain"><span class="status-dot demo"></span><span id="hardwareStatus">Demo only — no real device connected</span></div>
+              <label class="form-label" for="wsUrl">ESP32 HTTP address</label><input id="wsUrl" type="url" inputmode="url" placeholder="http://192.168.4.1" autocomplete="off"/><p class="field-hint">Enter the ESP32 WebServer address. Default access-point address: http://192.168.4.1. Browser access requires CORS headers in the firmware.</p>
+              <div class="connection-buttons"><button class="btn btn-dark" id="connectButton"><svg class="icon"><use href="#i-plug"/></svg> Connect</button><button class="btn btn-ghost" id="disconnectButton">Return to demo</button></div>
+              <div class="settings-warning"><svg class="icon"><use href="#i-shield"/></svg><p>Only movement, stop, and the existing water sequence are mapped by this HTTP adapter. Add firmware-side watchdog and all-actuator emergency stop; a website button is not a substitute for a physical stop switch.</p></div>
+            </article>
+            <article class="panel settings-card"><div class="panel-header"><div><h2>Demo environment</h2><p>Local simulation tools</p></div><span class="actuator-symbol yellow"><svg class="icon"><use href="#i-rotate"/></svg></span></div><div class="settings-input-row"><label for="demoMoisture">Sample soil condition</label><select id="demoMoisture"><option value="32">Dry soil — 32%</option><option value="54">Optimal soil — 54%</option><option value="78">Wet soil — 78%</option></select></div><button class="btn btn-ghost wide" id="applyMoisture">Apply simulated reading</button><button class="btn btn-ghost wide" id="resetDemo">Reset demo data</button><p class="field-hint">Demo readings do not represent a real soil sample or live sensor.</p></article>
+          </div>
+        </section>
+
+        <section class="page" id="page-about" data-page="about">
+          <div class="page-head"><div><span class="eyebrow">BUILT FOR SMARTER GROWING</span><h1>About EcoPlanter</h1><p>A practical student robotics concept for accessible agricultural automation.</p></div></div>
+          <div class="about-hero"><img src="assets/ecoplanter-hero.webp" alt="EcoPlanter robotic planting prototype in a garden"/><div class="about-hero-text"><span>THE PROJECT</span><h2>Technology that grows with you.</h2><p>EcoPlanter combines a mobile chassis, calibrated seed placement, soil moisture checking, and targeted watering into one integrated design.</p></div></div>
+          <div class="section-heading"><div><span class="eyebrow">AUTOMATED WORKFLOW</span><h2>How a planting cycle works</h2></div></div>
+          <div class="workflow-grid"><div class="workflow-step"><b>01</b><h3>Align</h3><p>Move to the next target and align the tools using programmed positions or camera references.</p></div><div class="workflow-step"><b>02</b><h3>Sense</h3><p>Lower a guided moisture probe into the soil at a repeatable depth.</p></div><div class="workflow-step"><b>03</b><h3>Plant</h3><p>Position the two-joint seeder arm and release the selected number of seeds.</p></div><div class="workflow-step"><b>04</b><h3>Water</h3><p>If the moisture reading is below the set threshold, aim the nozzle and run the pump.</p></div><div class="workflow-step"><b>05</b><h3>Count</h3><p>Update command-based counts and record the planting-cycle outcome.</p></div></div>
+          <div class="about-bottom"><div class="panel"><h2>Designed with practical parts</h2><p>ESP32 controller, ESP32-CAM, servo-powered arms, capacitive soil sensor, mini pump, seed hopper, drive motors and a water-resistant plastic chassis.</p></div><div class="panel"><h2>Prototype disclaimer</h2><p>This website includes a working demonstration interface, but the displayed images and simulated telemetry do not validate real-world planting accuracy, vision detection or moisture control.</p></div></div>
+        </section>
+      </main>
+      <footer class="app-footer"><span>© <span id="year"></span> EcoPlanter · Smart Agricultural Robotics</span><span>Built for learning, designed for growth <span class="footer-leaf">✳</span></span></footer>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

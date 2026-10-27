@@ -1,0 +1,49 @@
+EcoPlanter HTTP integration — required firmware-side changes
+
+IMPORTANT
+The website adapter calls the existing ESP32 HTTP endpoints:
+  GET /p                 connection check
+  GET /c?d=f             forward
+  GET /c?d=b             backward
+  GET /c?d=l             left
+  GET /c?d=r             right
+  GET /c?d=s             stop wheels
+  GET /c?d=w             existing water sequence
+
+1) Add CORS response headers
+
+Add this helper near your WebServer declaration:
+
+void addCorsHeaders() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+  server.sendHeader("Cache-Control", "no-store");
+}
+
+Call addCorsHeaders() inside each handler used by the browser, immediately BEFORE every server.send(...) response in the /p and /c handlers. If the website also reads /v, add it there too. Example:
+
+server.on("/p", HTTP_GET, []() {
+  addCorsHeaders();
+  server.send(200, "text/plain", "OK");
+});
+
+Do not replace the existing /p handler's useful response logic; just add the headers before its existing server.send(...). Likewise, preserve the existing /c handler and add headers before each response branch.
+
+If you use an HTTP_OPTIONS route in your sketch, it should return 204 with the same CORS headers. The website currently sends simple GET requests without custom headers, so normal GET requests should not need a preflight, but OPTIONS support is useful for future changes.
+
+2) Required movement watchdog (firmware, not browser)
+
+The joystick adapter sends repeated direction commands while held and sends /c?d=s when released. Add an onboard watchdog in loop(): when the robot is in a moving state and no valid movement command has arrived for a short interval (suggested 300–500 ms), call your existing wheel-stop function. Update the last-movement-command timestamp whenever /c?d=f/b/l/r is received. Use millis() subtraction for rollover-safe timing. Do not let a browser connection or /p ping count as a movement command.
+
+3) Emergency-stop limitation
+
+The current website's Emergency Stop sends the existing /c?d=s route. Based on the current firmware command mapping, `s` stops wheel movement; it does not necessarily cancel the pump or a servo sequence. For a true emergency stop, add a separate firmware route/flag that stops wheels, turns the pump off, cancels active sequences, and prevents new movement until reset. Also use a physical emergency-stop switch or motor-power cutoff. Do not claim this software-only adapter is a complete safety interlock.
+
+4) Supported and unsupported controls
+
+This adapter maps the current documented commands for wheel movement, stop, and the existing water sequence. Joystick direction is translated to forward/back/left/right; analog speed and diagonal mixing are not supported by the current HTTP API. Automatic planting, seed dispensing, probe sensing, live moisture/battery telemetry, and arm-specific actions must remain unavailable or simulated until the firmware has matching endpoints and real sensor/actuator logic.
+
+5) Network
+
+For the ESP32 access-point setup, connect to SSID `EcoPlanter` with password `plant1234`; the default ESP32 address is usually `192.168.4.1`. Open the local website over HTTP on the same Wi-Fi. An HTTPS-hosted site generally cannot call the ESP32's plain HTTP address.
