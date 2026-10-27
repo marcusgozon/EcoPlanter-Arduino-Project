@@ -173,6 +173,21 @@ The panel stays in sync with the robot: it reads the robot's state every second 
 
 The **Soil moisture probe** buttons do nothing on the real robot yet, because there is no probe hardware or firmware for it.
 
+### Automatic planting
+
+Press **Start automatic cycle** (Robot Controls or Dashboard, with **Automatic** selected) or **Start auto planting** on the robot's own Drive tab. The robot runs this loop by itself until you stop it:
+
+1. Move all servos home
+2. Drive forward a short distance, then stop
+3. Lower the digger and dig, then raise it
+4. Turn the base to the seed side, open the gate briefly so a seed drops, close it
+5. Turn the base to the water side, move the watering arm out and run the pump
+6. Return the arm and base to center, then repeat
+
+Any manual command (driving, a slider, a preset, the pump, Dig, Home) or **Stop all** / **Stop current action** ends the automatic cycle. The website follows the robot's real state, so the Start button unlocks again when the robot stops.
+
+The timings and options are constants at the top of the automation section in the firmware: `AUTO_SPEED`, `AUTO_DRIVE_MS`, `AUTO_SETTLE_MS`, `AUTO_SEED_HOLD_MS`, `AUTO_WATER_MS`, `AUTO_CYCLES` (0 = repeat forever), `SEED_AT_LEFT` and `AUTO_MOVE_ARM_TO_WATER`.
+
 ### Demo Mode
 
 When no robot is connected, everything runs on simulated data so you can try the website anywhere:
@@ -200,18 +215,19 @@ The website talks to the ESP32 with simple HTTP GET requests. The firmware allow
 | `/save?id=<0-15>&us=` | Store a preset |
 | `/dig?on=1\|0` | Start or stop the dig routine |
 | `/home` | All servos to home |
+| `/auto?on=1\|0` | Start or stop automatic planting |
 | `/reset` | Reset saved presets to defaults |
 | `/hold?a=<0-6>` | Freeze one servo where it is |
 | `/pump?on=1\|0` | Pump on or off (turns itself off if the requests stop) |
-| `/stop` | Stop wheels, pump, dig routine and servos |
-| `/v` | Status: servo targets, saved presets, pump state, dig count |
+| `/stop` | Stop wheels, pump, dig routine, automatic planting and servos |
+| `/v` | Status: servo targets, saved presets, pump state, dig count, auto running (`1`/`0`) |
 
 Servo numbers (`a`): 0 Base, 1 Shoulder, 2 Elbow, 3 Lift, 4 Gate, 5 Dig lower, 6 Dig.
 
 Where to change things:
 
 - Website behaviour and robot commands: `app.js`
-- Default positions, servo speeds and dig count: the top of the firmware (`POS_DEFAULT`, `SLEW_US`, `DIG_REPS`). If you change `DIG_REPS`, change `ARM_REPS` in `app.js` to match.
+- Default positions, servo speeds and dig count: the top of the firmware (`POS_DEFAULT`, `SLEW_US`, `DIG_REPS`). If you change `DIG_REPS`, change `ARM_REPS` in `app.js` to match. If you change `POS_DEFAULT`, change `ARM_POS_DEFAULT` in `app.js` too.
 
 ---
 
@@ -219,6 +235,7 @@ Where to change things:
 
 - The wheels stop by themselves if the robot stops receiving drive commands (for example if Wi-Fi drops), and the pump turns itself off if its commands stop. Still, **keep a physical power switch within reach** whenever the robot moves.
 - The website's Emergency stop also locks the website's own controls until you reset them in Settings. It is not a replacement for a hardware emergency stop.
+- **Automatic planting keeps running even if your phone loses Wi-Fi**, because the cycle runs on the robot. It has no obstacle or edge sensing while it drives. Watch it the whole time and keep the power switch in reach.
 - Servos move on their own once told to. Keep hands and cables clear of the arms while testing.
 
 ---

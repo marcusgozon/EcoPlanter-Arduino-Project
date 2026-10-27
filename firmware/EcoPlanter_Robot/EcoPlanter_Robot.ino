@@ -56,11 +56,11 @@ const int OLD_P_COUNT = 11;        // size of the previous version's saved block
 // Left = watering arm to the front. Right = seeding turret to the front.
 // Dig values are starting guesses: calibrate them on the Arm tab.
 const int POS_DEFAULT[P_COUNT] = {
-  1500, 2300, 700,   // base: center, left, right
+  1500, 2550, 700,   // base: center, left, right
   1500, 1000,        // shoulder: home, water
   1500, 1250,        // elbow: up, water
-  450, 2300,         // lift: up, down
-  1500, 1100,        // gate: closed, open
+  350, 2300,         // lift: up, down
+  1350, 1100,        // gate: closed, open
   1500, 1200,        // dig lower: up, down
   1300, 1500, 1700   // dig: left, center, right
 };
@@ -90,6 +90,14 @@ Axis ax[AX_COUNT] = {
 // Dig routine state: swing left then right DIG_REPS times, then return to center.
 bool digging = false;
 int digRep = 0, digPhase = 0;      // phase 0 = heading left, 1 = heading right, 2 = returning to center
+
+// Automatic planting state machine (see the automation section below).
+enum AutoState { A_OFF, A_HOME, A_DRIVE, A_SETTLE, A_DIG_DOWN, A_DIG_RUN, A_DIG_UP,
+                 A_TO_SEED, A_GATE_OPEN, A_GATE_HOLD, A_GATE_CLOSE,
+                 A_TO_WATER, A_ARM_OUT, A_WATER, A_ARM_BACK, A_CENTER };
+AutoState autoState = A_OFF;
+unsigned long autoT = 0;
+int autoCycle = 0;
 
 unsigned long lastSlew = 0, driveSeen = 0;
 bool moving = false;
@@ -173,6 +181,10 @@ button:focus-visible,input:focus-visible{outline:3px solid #8DB9F0;outline-offse
   <div class="card">
     <div class="lbl"><span>Wheel speed</span><output id="spv">60%</output></div>
     <input type="range" id="sp" min="20" max="100" step="5" value="60">
+  </div>
+  <div class="card">
+    <button class="dig" id="au" style="margin-top:0" data-on="0">Start auto planting</button>
+    <p class="hint">Drives a little, digs, drops a seed, waters, then repeats. Tap again or Stop all to end.</p>
   </div>
 </div>
 
@@ -277,6 +289,7 @@ hold($('water'),function(){$('wt').textContent='Watering';pump()},pump,
   function(){$('wt').textContent='Hold to water';api('/pump?on=0');setTimeout(function(){api('/pump?on=0')},150)},400);
 
 $('sp').oninput=function(){speed=+this.value;$('spv').textContent=speed+'%'};
+$('au').onclick=function(){var on=this.getAttribute('data-on')==='1'?0:1;api('/auto?on='+on).then(function(){setTimeout(poll,150)})};
 $('stop').onclick=function(){releaseAll();api('/stop').then(function(){toast('Everything stopped');setTimeout(poll,150)})};
 $('home').onclick=function(){api('/home').then(function(){toast('Moving to home')})};
 $('rs').onclick=function(){
@@ -303,6 +316,9 @@ function poll(force){
     g.setAttribute('data-on',dg>0?'1':'0');
     g.classList.toggle('on',dg>0);
     g.textContent=dg>0?'Digging '+dg+' of '+REPS+'. Tap to stop':'Dig '+REPS+' times';
+    var au=$('au'),ar=p[4]==='1';
+    au.setAttribute('data-on',ar?'1':'0');au.classList.toggle('on',ar);
+    au.textContent=ar?'Auto running. Tap to stop':'Start auto planting';
     if(dg>0)setTimeout(poll,400);
   });
 }
@@ -415,7 +431,105 @@ void runDig() {
   }
 }
 
+// ---------- automation ----------
+// One cycle: drive a little -> stop -> dig -> base to the seed side -> drop a seed
+// (gate snaps open and shut) -> base to the water side -> water -> back to center -> repeat.
+const int AUTO_SPEED = 50;                    // wheel speed % while automatic
+const unsigned long AUTO_DRIVE_MS = 1500;     // how long to drive forward each cycle
+const unsigned long AUTO_SETTLE_MS = 600;     // pause after stopping, before digging
+const unsigned long AUTO_SEED_HOLD_MS = 200;  // gate stays open this long so the seed falls
+const unsigned long AUTO_WATER_MS = 2500;     // pump time each cycle
+const int AUTO_CYCLES = 0;                    // 0 = repeat until stopped
+const int GATE_FAST_SLEW = 120;               // gate speed (us per 10 ms) while snapping open/shut
+const bool SEED_AT_LEFT = true;               // true: seed at base LEFT, water at base RIGHT. false swaps them.
+const bool AUTO_MOVE_ARM_TO_WATER = true;     // move shoulder/elbow to their Water presets while watering
+const int SEED_BASE = SEED_AT_LEFT ? P_BASE_LEFT : P_BASE_RIGHT;
+const int WATER_BASE = SEED_AT_LEFT ? P_BASE_RIGHT : P_BASE_LEFT;
+
+bool axesDone() {
+  for (int i = 0; i < AX_COUNT; i++) if (ax[i].cur != ax[i].target) return false;
+  return true;
+}
+
+// Entering a state does its action once; runAuto() waits for it to finish.
+void autoGo(AutoState st) {
+  autoState = st;
+  autoT = millis();
+  switch (st) {
+    case A_HOME:       for (int i = 0; i < AX_COUNT; i++) ax[i].target = pos[HOME_POS[i]]; break;
+    case A_DRIVE:      drive(AUTO_SPEED, AUTO_SPEED); driveSeen = millis(); break;
+    case A_SETTLE:     drive(0, 0); break;
+    case A_DIG_DOWN:   ax[AX_DIGLOW].target = pos[P_DIGLOW_DOWN]; break;
+    case A_DIG_RUN:    digStart(); break;
+    case A_DIG_UP:     ax[AX_DIGLOW].target = pos[P_DIGLOW_UP]; break;
+    case A_TO_SEED:    ax[AX_BASE].target = pos[SEED_BASE]; break;
+    case A_GATE_OPEN:  ax[AX_GATE].slew = GATE_FAST_SLEW; ax[AX_GATE].target = pos[P_GATE_OPEN]; break;
+    case A_GATE_CLOSE: ax[AX_GATE].target = pos[P_GATE_CLOSED]; break;
+    case A_TO_WATER:   ax[AX_GATE].slew = SLEW_US; ax[AX_BASE].target = pos[WATER_BASE]; break;
+    case A_ARM_OUT:    ax[AX_SHOULDER].target = pos[P_SHOULDER_WATER]; ax[AX_ELBOW].target = pos[P_ELBOW_WATER]; break;
+    case A_WATER:      pumpSet(true); pumpOff = millis() + 1200; break;
+    case A_ARM_BACK:   pumpSet(false); ax[AX_SHOULDER].target = pos[P_SHOULDER_HOME]; ax[AX_ELBOW].target = pos[P_ELBOW_UP]; break;
+    case A_CENTER:     pumpSet(false); ax[AX_BASE].target = pos[P_BASE_CENTER]; break;
+    default: break;
+  }
+}
+
+void autoStart() {
+  drive(0, 0);
+  pumpSet(false);
+  digging = false;
+  autoCycle = 0;
+  autoGo(A_HOME);
+}
+
+// Stops the automation (and everything it was doing). Does nothing if it isn't running.
+void autoCancel() {
+  if (autoState == A_OFF) return;
+  autoState = A_OFF;
+  ax[AX_GATE].slew = SLEW_US;
+  drive(0, 0);
+  pumpSet(false);
+  digging = false;
+  for (int i = 0; i < AX_COUNT; i++) ax[i].target = ax[i].cur;
+}
+
+void runAuto() {
+  if (autoState == A_OFF) return;
+  unsigned long now = millis();
+  switch (autoState) {
+    case A_HOME:       if (axesDone()) autoGo(A_DRIVE); break;
+    case A_DRIVE:
+      driveSeen = now;                                   // keep the wheel dead-man timer fed
+      if (now - autoT >= AUTO_DRIVE_MS) autoGo(A_SETTLE);
+      break;
+    case A_SETTLE:     if (now - autoT >= AUTO_SETTLE_MS) autoGo(A_DIG_DOWN); break;
+    case A_DIG_DOWN:   if (axesDone()) autoGo(A_DIG_RUN); break;
+    case A_DIG_RUN:    if (!digging && axesDone()) autoGo(A_DIG_UP); break;
+    case A_DIG_UP:     if (axesDone()) autoGo(A_TO_SEED); break;
+    case A_TO_SEED:    if (axesDone()) autoGo(A_GATE_OPEN); break;
+    case A_GATE_OPEN:  if (axesDone()) autoGo(A_GATE_HOLD); break;
+    case A_GATE_HOLD:  if (now - autoT >= AUTO_SEED_HOLD_MS) autoGo(A_GATE_CLOSE); break;
+    case A_GATE_CLOSE: if (axesDone()) autoGo(A_TO_WATER); break;
+    case A_TO_WATER:   if (axesDone()) autoGo(AUTO_MOVE_ARM_TO_WATER ? A_ARM_OUT : A_WATER); break;
+    case A_ARM_OUT:    if (axesDone()) autoGo(A_WATER); break;
+    case A_WATER:
+      pumpOff = now + 1200;                              // keep the pump dead-man timer fed
+      if (now - autoT >= AUTO_WATER_MS) autoGo(AUTO_MOVE_ARM_TO_WATER ? A_ARM_BACK : A_CENTER);
+      break;
+    case A_ARM_BACK:   if (axesDone()) autoGo(A_CENTER); break;
+    case A_CENTER:
+      if (axesDone()) {
+        autoCycle++;
+        if (AUTO_CYCLES > 0 && autoCycle >= AUTO_CYCLES) autoState = A_OFF;
+        else autoGo(A_DRIVE);
+      }
+      break;
+    default: break;
+  }
+}
+
 void stopAll() {
+  autoCancel();
   drive(0, 0);
   pumpSet(false);
   digging = false;
@@ -424,12 +538,14 @@ void stopAll() {
 
 // ---------- web handlers ----------
 void hDrive() {
+  autoCancel();
   String m = server.arg("m");
   driveCmd(m.length() ? tolower(m[0]) : 's', server.arg("sp").toInt());
   server.send(200, "text/plain", "ok");
 }
 
 void hServo() {
+  autoCancel();
   int a = server.arg("a").toInt();
   int us = constrain(server.arg("us").toInt(), US_MIN, US_MAX);
   if (a >= 0 && a < AX_COUNT) {
@@ -440,6 +556,7 @@ void hServo() {
 }
 
 void hGo() {
+  autoCancel();
   int id = server.arg("id").toInt();
   if (id < 0 || id >= P_COUNT) { server.send(400, "text/plain", ""); return; }
   if (POS_AXIS[id] == AX_DIG) digging = false;
@@ -448,6 +565,7 @@ void hGo() {
 }
 
 void hSave() {
+  autoCancel();
   int id = server.arg("id").toInt();
   int us = constrain(server.arg("us").toInt(), US_MIN, US_MAX);
   if (id >= 0 && id < P_COUNT) {
@@ -460,18 +578,27 @@ void hSave() {
 }
 
 void hPump() {
+  autoCancel();
   if (server.arg("on") == "1") { pumpSet(true); pumpOff = millis() + 1200; }
   else pumpSet(false);
   server.send(200, "text/plain", "ok");
 }
 
 void hDig() {
+  autoCancel();
   if (server.arg("on") == "1") { if (!digging) digStart(); }
   else if (digging) digCancel(true);
   server.send(200, "text/plain", "ok");
 }
 
+void hAuto() {
+  if (server.arg("on") == "1") { if (autoState == A_OFF) autoStart(); }
+  else autoCancel();
+  server.send(200, "text/plain", "ok");
+}
+
 void hHome() {
+  autoCancel();
   digging = false;
   for (int i = 0; i < AX_COUNT; i++) ax[i].target = pos[HOME_POS[i]];
   server.send(200, "text/plain", "ok");
@@ -485,6 +612,8 @@ void hStatus() {
   s += pumpOn ? "|1" : "|0";
   s += "|";
   s += digging ? String(digRep + 1) : String(0);
+  s += "|";
+  s += (autoState != A_OFF) ? "1" : "0";
   server.send(200, "text/plain", s);
 }
 
@@ -518,9 +647,11 @@ void setup() {
   server.on("/pump", hPump);
   server.on("/dig", hDig);
   server.on("/home", hHome);
+  server.on("/auto", hAuto);
   server.on("/stop", []() { stopAll(); server.send(200, "text/plain", "ok"); });
   server.on("/reset", []() { resetPos(); server.send(200, "text/plain", "reset"); });
   server.on("/hold", []() {   // freeze ONE axis where it is (website "Rotate arms" release)
+    autoCancel();
     int a = server.arg("a").toInt();
     if (a >= 0 && a < AX_COUNT) {
       if (a == AX_DIG) digging = false;
@@ -537,6 +668,7 @@ void setup() {
 
   // Joystick / buttons: f = forward, b = back, l = left, r = right, s = stop, w = water
   server.on("/c", []() {
+    autoCancel();                  // any manual drive/water command ends automatic mode
     String d = server.arg("d");
     char k = d.length() ? tolower(d[0]) : 's';
     if (k == 'w') {
@@ -555,6 +687,7 @@ void loop() {
   server.handleClient();
   runAxes();
   runDig();
+  runAuto();
   if (pumpOn && pumpOff && millis() > pumpOff) pumpSet(false);   // dead-man: page stopped asking
   if (moving && millis() - driveSeen > 600) drive(0, 0);         // dead-man: page stopped asking
 }

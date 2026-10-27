@@ -92,7 +92,7 @@
     { n: "Dig", note: "Swings left and right to loosen the soil.", p: [[13, "Left"], [14, "Center"], [15, "Right"]], dig: true },
   ];
   // Same defaults as POS_DEFAULT in the firmware (used for Demo Mode and as a fallback).
-  const ARM_POS_DEFAULT = [1500, 2300, 700, 1500, 1000, 1500, 1250, 450, 2300, 1500, 1100, 1500, 1200, 1300, 1500, 1700];
+  const ARM_POS_DEFAULT = [1500, 2550, 700, 1500, 1000, 1500, 1250, 350, 2300, 1350, 1100, 1500, 1200, 1300, 1500, 1700];
   const ARM_HOME = [0, 3, 5, 7, 9, 11, 14]; // preset id each axis returns to on "Home all"
   // Multi-step moves for the older "Aim at target" / "Drop seed" buttons.
   const ARM_SEQUENCES = {
@@ -113,6 +113,7 @@
     demoDig: null,
     waterHold: null,
     pumpUntil: 0,
+    autoSince: 0, // when the website last asked the robot to start auto planting
   };
   let cycleTimer = null,
     pumpTimer = null,
@@ -384,6 +385,7 @@
   function hardwareSteps(command, params = {}) {
     if (command === "stop" || command === "emergency_stop") return [{ path: "/stop" }];
     if (command === "stop_arms") return [{ path: "/hold?a=0" }];
+    if (command === "start_auto") return [{ path: "/auto?on=1" }];
     if (command === "rotate_arms") return [{ path: `/g?id=${arm.vals[0] >= 1500 ? 2 : 1}` }];
     if (ARM_SEQUENCES[command]) return ARM_SEQUENCES[command];
     const letter = httpCommandFor(command, params);
@@ -537,7 +539,9 @@
       if (sendHardware("start_auto")) {
         state.running = true;
         state.step = 0;
-        setStatus("Start command sent", "Waiting for ESP32 telemetry.");
+        arm.autoSince = Date.now();
+        setStatus("Automatic planting", "Robot is driving, digging, seeding and watering on its own. Press Stop to end.");
+        setTimeout(() => armPoll(), 400);
         log(
           "Automatic start requested",
           "Command delivered to connected robot",
@@ -732,6 +736,19 @@
       const pumpOn = p[2] === "1";
       if (pumpOn !== state.pump && Date.now() > arm.pumpUntil) setPump(pumpOn);
       arm.digRep = Number(p[3]) || 0;
+      // p[4] = 1 while the robot runs its automatic planting cycle (also when started from its own page).
+      if (p.length > 4) {
+        const autoOn = p[4] === "1";
+        if (autoOn && !state.running) {
+          state.running = true;
+          setStatus("Automatic planting", "Robot is driving, digging, seeding and watering on its own. Press Stop to end.");
+          renderSummary();
+        } else if (!autoOn && state.running && Date.now() - arm.autoSince > 2500) {
+          state.running = false;
+          setStatus("Automatic planting ended", "The robot stopped its cycle.");
+          renderSummary();
+        }
+      }
       renderArm();
     });
   }
